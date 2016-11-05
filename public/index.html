@@ -3,37 +3,213 @@
 <head>
     <title>Socket.IO chat</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font: 13px Helvetica, Arial; }
-        form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-        #messages { list-style-type: none; margin: 0; padding: 0; }
-        #messages li { padding: 5px 10px; }
-        #messages li:nth-child(odd) { background: #eee; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font: 13px Helvetica, Arial;
+        }
+
+        form {
+            background: #000;
+            padding: 3px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        form input {
+            border: 0;
+            padding: 10px;
+            width: 90%;
+            margin-right: .5%;
+        }
+
+        form button {
+            width: 9%;
+            background: rgb(130, 224, 255);
+            border: none;
+            padding: 10px;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages li {
+            padding: 10px 10px;
+        }
+
+        /*#messages li:nth-child(odd) {
+            background: #eee;
+        }*/
+
+        #nameW {
+            width: 100%;
+            height: 100vh;
+            text-align: center;
+            background: #fff;
+
+        }
+
+        #nameW p {
+            position: absolute;
+            top: 35%;
+            left: 0;
+            width: 100%;
+            padding: 10px 0;
+            font-size: 35px;
+            letter-spacing: 3px;
+            color: rgb(130, 224, 255);
+        }
+
+        .name {
+            position: absolute;
+            top: 45%;
+            width: 400px;
+            left: 50%;
+            margin-left: -200px;
+            background: #ffffff;
+            padding: 10px;
+            border: none;
+            border-bottom: 2px solid rgb(130, 224, 255);
+            text-align: center;
+            font-size: 50px;
+            color: rgb(130, 224, 255);
+            outline: none;
+        }
+
+        #messages .log {
+            text-align: center;
+            color: #888888;
+            font-size: 12px;
+        }
+
+        #messages .message {
+            font-size: 20px;
+            line-height: 25px;
+        }
+        #messages .slf{
+            color:rgb(130, 224, 255);
+            font-size: 25px;
+            font-weight:bold;
+        }
+        #messages .other{
+            color:#333;
+            font-size: 25px;
+        }
+        #messageW {
+            display: none;
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script src="./js/jquery-1.11.3.js"></script>
     <script>
         $(function () {
             var socket = io();
-            $('form').submit(function(){
-                console.log(1);
-                socket.emit('chat message', $('#m').val());
-                $('#m').val('');
+            var connected=false;
+            var username;
+            var $messsW = $("#messageW");
+            var $window = $(window);
+            var $messages = $("#messages");
+            var $currentInput = $(".name").eq(0);
+            var $inputMessage = $("#m");
+            $('form').submit(function () {
+               /* socket.emit('chat message', $('#m').val());
+                $('#m').val('');*/
+               sendMessage();
                 return false;
             });
-            socket.on('chat message', function(msg){
-                $('#messages').append($('<li>').text(msg));
+            function addMsg(msg) {
+                $messages.append($('<li class="message' +
+                        '">').html(msg))
+            }
+
+            function addLog(log) {
+                $messages.append($('<li class="log">').text(log))
+            }
+
+            socket.on('chat message', function (msg) {
+                if(msg.username==username){
+                    var userM='<span class="slf">' +username+
+                            '</span>: '+msg.message;
+                       addMsg(userM)
+                }else {
+                    var userN=msg.username;
+                    var userM='<span class="other">' +userN+
+                            '</span>: '+msg.message;
+                    addMsg(userM)
+                }
             });
+            socket.on('log',function (msg) {
+               addLog(msg);
+            });
+            $window.on("keydown", function (event) {
+                if (!(event.ctrlKey || event.metaKey || event.altKey)) {
+                    $currentInput.focus();
+                }
+                // When the client hits ENTER on their keyboard
+                if (event.which === 13) {
+                    if (username) {
+                        sendMessage();
+                    } else {
+                        setUsername();
+                    }
+                }
+            });
+            //发送名字的一系列操作
+            function setUsername() {
+                username = $(".name").eq(0).val().trim();
+
+                // If the username is valid
+                if (username) {
+                    $("#nameW").fadeOut();
+                    $messsW.fadeIn();
+                    $currentInput = $("#m");
+                    $currentInput.focus();
+                    // 增加用户名
+                    socket.emit('add user', username);
+                    connected=true;
+                    $window.off("keydown");
+                }
+            }
+
+            function sendMessage() {
+                var message = $inputMessage.val();
+                // Prevent markup from being injected into the message
+                // if there is a non-empty message and a socket connection
+                if (message && connected) {
+                    $inputMessage.val('');
+                    var sendmsg={
+                        username: username,
+                        message: message
+                    };
+                    // tell server to execute 'new message' and send along one parameter
+                    socket.emit('new message', sendmsg);
+                    $inputMessage.val('');
+                }
+            }
+
         });
 
     </script>
 </head>
 <body>
-<ul id="messages"></ul>
-<form action="">
-    <input id="m" autocomplete="off" /><button>Send</button>
-</form>
+<div id="nameW">
+    <p>输入你的昵称</p>
+    <input type="text" class="name"/>
+</div>
+<div id="messageW">
+    <ul id="messages"></ul>
+    <form action="">
+        <input id="m" autocomplete="off"/>
+        <button>Send</button>
+    </form>
+</div>
 </body>
 </html>

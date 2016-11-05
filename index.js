@@ -11,15 +11,34 @@ app.get('/', function(req, res){
     res.sendfile('./public/index.html');
 });
 */
-
+var gustNumber=0;
+var nickNames={};
+var rooms=[];
+var currentRoom={};
 io.on('connection', function(socket){
-    socket.on('chat message', function(msg){
-        console.log('message: ' + msg);
+    socket.on('new message', function(msg){
         io.emit('chat message', msg)
     });
-    /*socket.on('disconnect', function(){
-        console.log('user disconnected');
-    });*/
+    socket.on("add user",function (user) {
+
+       if(user){
+           gustNumber++;
+           nickNames[socket.id]=user;
+           var logM="欢迎"+user+"加入聊天室(∩_∩)";
+           io.emit("log",logM);
+           console.log(gustNumber);
+       }
+    });
+    socket.on('disconnect', function(){
+        if(typeof nickNames[socket.id]!=="undefined"){
+            var user= nickNames[socket.id];
+            delete nickNames[socket.id];
+            gustNumber--;
+            var logM=user+"退出了聊天室(づ｡◕‿‿◕｡)づ！";
+            io.emit("log",logM);
+            console.log(gustNumber);
+        }
+    });
 });
 http.listen(3000, function(){
     console.log('listening on *:3000');
