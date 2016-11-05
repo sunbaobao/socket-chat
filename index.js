@@ -36,7 +36,7 @@ io.on('connection', function(socket){
             gustNumber--;
             var logM=user+"退出了聊天室(づ｡◕‿‿◕｡)づ！";
             io.emit("log",logM);
-            console.log(gustNumber);
+            // console.log(gustNumber);
         }
     });
 });

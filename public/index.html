@@ -37,8 +37,8 @@
 
         #messages {
             list-style-type: none;
-            margin: 0;
             padding: 0;
+            margin-bottom: 50px;
         }
 
         #messages li {
@@ -143,7 +143,7 @@
                     var userN=msg.username;
                     var userM='<span class="other">' +userN+
                             '</span>: '+msg.message;
-                    addMsg(userM)
+                    addMsg(userM);
                 }
             });
             socket.on('log',function (msg) {
