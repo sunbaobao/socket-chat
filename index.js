@@ -26,7 +26,7 @@ io.on('connection', function(socket){
            nickNames[socket.id]=user;
            var logM="欢迎"+user+"加入聊天室(∩_∩)";
            io.emit("log",logM);
-           console.log(gustNumber);
+           //console.log(gustNumber);
        }
     });
     socket.on('disconnect', function(){
